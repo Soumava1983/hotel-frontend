@@ -2,7 +2,7 @@ let lastSearch = null;
 let isLoggedIn = false;
 
 // Define the backend URL (this will be updated by the script)
-const BACKEND_URL = "http://localhost:3000"; // Placeholder
+const BACKEND_URL = "https://hotel-backend-n0n6.onrender.com"; // Placeholder
 
 document.addEventListener("DOMContentLoaded", async function() {
     await checkSession();
