@@ -4,37 +4,56 @@ let isLoggedIn = false;
 // Define the backend URL (this will be updated by the script)
 const BACKEND_URL = "https://hotel-backend-n0n6.onrender.com"; // Placeholder
 
-document.addEventListener("DOMContentLoaded", async function() {
+document.addEventListener('DOMContentLoaded', async () => {
     await checkSession();
-    setupLoginButton();
+    // Other initialization code...
 });
 
 async function checkSession() {
     try {
+        const token = localStorage.getItem('token') || 'null';
         const response = await fetch('https://hotel-backend-n0n6.onrender.com/check-session', {
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
         });
         const data = await response.json();
-        const loginButton = document.getElementById('loginButton'); // Adjust ID as per your HTML
+        const loginButton = document.getElementById('loginButton');
+        if (!loginButton) {
+            console.warn('Login button not found in the DOM. Ensure an element with id="loginButton" exists on this page.');
+            return; // Exit the function if the button isn't found
+        }
         if (data.loggedIn) {
             loginButton.textContent = 'Log Out';
             loginButton.onclick = async () => {
                 await fetch('https://hotel-backend-n0n6.onrender.com/logout', {
                     method: 'POST',
-                    credentials: 'include'
+                    credentials: 'include',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
+                localStorage.removeItem('token');
                 window.location.reload();
             };
         } else {
             loginButton.textContent = 'Log In';
             loginButton.onclick = () => {
-                window.location.href = '/login.html'; // Redirect to login page
+                window.location.href = '/login.html';
             };
         }
     } catch (error) {
         console.error('Error checking session:', error);
         const loginButton = document.getElementById('loginButton');
+        if (!loginButton) {
+            console.warn('Login button not found in the DOM during error handling.');
+            return;
+        }
         loginButton.textContent = 'Log In';
+        loginButton.onclick = () => {
+            window.location.href = '/login.html';
+        };
     }
 }
 
