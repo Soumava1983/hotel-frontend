@@ -21,11 +21,15 @@ async function checkSession() {
         const data = await response.json();
         const loginBtn = document.getElementById('login-btn');
         const logoutBtn = document.getElementById('logout-btn');
+        const loginForm = document.getElementById("login-form"); // Added to manage popup
         const bookingHistorySection = document.getElementById("booking-history-section");
 
         if (!loginBtn || !logoutBtn) {
             console.warn('Login or logout button not found in the DOM. Ensure elements with id="login-btn" and id="logout-btn" exist on this page.');
             return;
+        }
+        if (!loginForm) {
+            console.warn('Login form not found in the DOM. Ensure an element with id="login-form" exists.');
         }
         if (!bookingHistorySection) {
             console.warn('Booking history section not found in the DOM. Ensure an element with id="booking-history-section" exists.');
@@ -35,6 +39,9 @@ async function checkSession() {
             isLoggedIn = true;
             loginBtn.style.display = "none";
             logoutBtn.style.display = "inline-block";
+            if (loginForm) {
+                loginForm.style.display = "none"; // Hide the login popup
+            }
             if (bookingHistorySection) {
                 bookingHistorySection.style.display = "block";
             }
@@ -47,6 +54,9 @@ async function checkSession() {
             isLoggedIn = false;
             loginBtn.style.display = "inline-block";
             logoutBtn.style.display = "none";
+            if (loginForm) {
+                loginForm.style.display = "none"; // Hide the login popup
+            }
             if (bookingHistorySection) {
                 bookingHistorySection.style.display = "none";
             }
@@ -60,11 +70,15 @@ async function checkSession() {
         console.error('Error checking session:', error);
         const loginBtn = document.getElementById('login-btn');
         const logoutBtn = document.getElementById('logout-btn');
+        const loginForm = document.getElementById("login-form"); // Added to manage popup
         const bookingHistorySection = document.getElementById("booking-history-section");
 
         if (!loginBtn || !logoutBtn) {
             console.warn('Login or logout button not found in the DOM during error handling.');
             return;
+        }
+        if (!loginForm) {
+            console.warn('Login form not found in the DOM during error handling.');
         }
         if (!bookingHistorySection) {
             console.warn('Booking history section not found in the DOM during error handling.');
@@ -73,6 +87,9 @@ async function checkSession() {
         isLoggedIn = false;
         loginBtn.style.display = "inline-block";
         logoutBtn.style.display = "none";
+        if (loginForm) {
+            loginForm.style.display = "none"; // Hide the login popup
+        }
         if (bookingHistorySection) {
             bookingHistorySection.style.display = "none";
         }
@@ -110,6 +127,10 @@ if (loginFormElement) {
             const data = await response.json();
             if (response.ok) {
                 localStorage.setItem("token", data.token);
+                const loginForm = document.getElementById("login-form"); // Hide popup after login
+                if (loginForm) {
+                    loginForm.style.display = "none";
+                }
                 alert("Login successful!");
                 await checkSession();
             } else {
