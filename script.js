@@ -11,55 +11,30 @@ document.addEventListener("DOMContentLoaded", async function() {
 
 async function checkSession() {
     try {
-        const token = localStorage.getItem("token");
-        const headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
-        };
-        if (token && token !== "null") {
-            headers["Authorization"] = `Bearer ${token}`;
-        }
-        const response = await fetch(`${BACKEND_URL}/check-session`, {
-            method: "GET",
-            headers: headers,
-            credentials: "include" // Add this to send cookies
+        const response = await fetch('https://hotel-backend-n0n6.onrender.com/check-session', {
+            credentials: 'include'
         });
         const data = await response.json();
-        const loginForm = document.getElementById("login-form");
-        const loginBtn = document.getElementById("login-btn");
-        const logoutBtn = document.getElementById("logout-btn");
-        const bookingHistorySection = document.getElementById("booking-history-section");
-
+        const loginButton = document.getElementById('loginButton'); // Adjust ID as per your HTML
         if (data.loggedIn) {
-            console.log("User is logged in");
-            isLoggedIn = true;
-            loginForm.style.display = "none";
-            loginBtn.style.display = "none";
-            logoutBtn.style.display = "inline-block";
-            bookingHistorySection.style.display = "block";
+            loginButton.textContent = 'Log Out';
+            loginButton.onclick = async () => {
+                await fetch('https://hotel-backend-n0n6.onrender.com/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                window.location.reload();
+            };
         } else {
-            console.log("User is not logged in");
-            isLoggedIn = false;
-            loginForm.style.display = "none";
-            loginBtn.style.display = "inline-block";
-            logoutBtn.style.display = "none";
-            bookingHistorySection.style.display = "none";
-        }
-
-        if (lastSearch) {
-            const rooms = await loadRooms(lastSearch.location);
-            displayRooms(rooms, lastSearch.checkIn, lastSearch.checkOut);
+            loginButton.textContent = 'Log In';
+            loginButton.onclick = () => {
+                window.location.href = '/login.html'; // Redirect to login page
+            };
         }
     } catch (error) {
-        console.error("Error checking session:", error);
-        isLoggedIn = false;
-        const loginForm = document.getElementById("login-form");
-        const loginBtn = document.getElementById("login-btn");
-        const logoutBtn = document.getElementById("logout-btn");
-        const bookingHistorySection = document.getElementById("booking-history-section");
-        loginForm.style.display = "none";
-        loginBtn.style.display = "inline-block";
-        logoutBtn.style.display = "none";
-        bookingHistorySection.style.display = "none";
+        console.error('Error checking session:', error);
+        const loginButton = document.getElementById('loginButton');
+        loginButton.textContent = 'Log In';
     }
 }
 
