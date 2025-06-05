@@ -1,8 +1,8 @@
 let lastSearch = null;
 let isLoggedIn = false;
 
-// Define the backend URL (this will be updated by the script)
-const BACKEND_URL = "https://hotel-backend-n0n6.onrender.com"; // Placeholder
+// Define the backend URL
+const BACKEND_URL = "https://hotel-backend-n0n6.onrender.com";
 
 document.addEventListener('DOMContentLoaded', async () => {
     await checkSession();
@@ -12,57 +12,86 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function checkSession() {
     try {
         const token = localStorage.getItem('token') || 'null';
-        const response = await fetch('https://hotel-backend-n0n6.onrender.com/check-session', {
+        const response = await fetch(`${BACKEND_URL}/check-session`, {
             credentials: 'include',
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
         const data = await response.json();
-        const loginButton = document.getElementById('loginButton');
-        if (!loginButton) {
-            console.warn('Login button not found in the DOM. Ensure an element with id="loginButton" exists on this page.');
-            return; // Exit the function if the button isn't found
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const bookingHistorySection = document.getElementById("booking-history-section");
+
+        if (!loginBtn || !logoutBtn) {
+            console.warn('Login or logout button not found in the DOM. Ensure elements with id="login-btn" and id="logout-btn" exist on this page.');
+            return;
         }
+        if (!bookingHistorySection) {
+            console.warn('Booking history section not found in the DOM. Ensure an element with id="booking-history-section" exists.');
+        }
+
         if (data.loggedIn) {
-            loginButton.textContent = 'Log Out';
-            loginButton.onclick = async () => {
-                await fetch('https://hotel-backend-n0n6.onrender.com/logout', {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                localStorage.removeItem('token');
-                window.location.reload();
-            };
+            isLoggedIn = true;
+            loginBtn.style.display = "none";
+            logoutBtn.style.display = "inline-block";
+            if (bookingHistorySection) {
+                bookingHistorySection.style.display = "block";
+            }
+            // Refresh room display to enable booking buttons
+            if (lastSearch) {
+                const rooms = await loadRooms(lastSearch.location);
+                displayRooms(rooms, lastSearch.checkIn, lastSearch.checkOut);
+            }
         } else {
-            loginButton.textContent = 'Log In';
-            loginButton.onclick = () => {
-                window.location.href = '/login.html';
-            };
+            isLoggedIn = false;
+            loginBtn.style.display = "inline-block";
+            logoutBtn.style.display = "none";
+            if (bookingHistorySection) {
+                bookingHistorySection.style.display = "none";
+            }
+            // Refresh room display to disable booking buttons
+            if (lastSearch) {
+                const rooms = await loadRooms(lastSearch.location);
+                displayRooms(rooms, lastSearch.checkIn, lastSearch.checkOut);
+            }
         }
     } catch (error) {
         console.error('Error checking session:', error);
-        const loginButton = document.getElementById('loginButton');
-        if (!loginButton) {
-            console.warn('Login button not found in the DOM during error handling.');
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const bookingHistorySection = document.getElementById("booking-history-section");
+
+        if (!loginBtn || !logoutBtn) {
+            console.warn('Login or logout button not found in the DOM during error handling.');
             return;
         }
-        loginButton.textContent = 'Log In';
-        loginButton.onclick = () => {
-            window.location.href = '/login.html';
-        };
+        if (!bookingHistorySection) {
+            console.warn('Booking history section not found in the DOM during error handling.');
+        }
+
+        isLoggedIn = false;
+        loginBtn.style.display = "inline-block";
+        logoutBtn.style.display = "none";
+        if (bookingHistorySection) {
+            bookingHistorySection.style.display = "none";
+        }
+        // Refresh room display to disable booking buttons
+        if (lastSearch) {
+            const rooms = await loadRooms(lastSearch.location);
+            displayRooms(rooms, lastSearch.checkIn, lastSearch.checkOut);
+        }
     }
 }
 
 function setupLoginButton() {
     const loginBtn = document.getElementById("login-btn");
     const loginForm = document.getElementById("login-form");
-    loginBtn.addEventListener("click", () => {
-        loginForm.style.display = loginForm.style.display === "block" ? "none" : "block";
-    });
+    if (loginBtn && loginForm) {
+        loginBtn.addEventListener("click", () => {
+            loginForm.style.display = loginForm.style.display === "block" ? "none" : "block";
+        });
+    }
 }
 
 const loginFormElement = document.getElementById("login-form-element");
@@ -95,24 +124,7 @@ if (loginFormElement) {
 
 const logoutBtn = document.getElementById("logout-btn");
 if (logoutBtn) {
-    logoutBtn.addEventListener("click", async function() {
-        try {
-            localStorage.removeItem("token");
-            const response = await fetch(`${BACKEND_URL}/logout`, {
-                method: "POST"
-            });
-            const data = await response.json();
-            if (response.ok) {
-                alert("Logout successful!");
-                await checkSession();
-            } else {
-                throw new Error(data.error || "Logout failed");
-            }
-        } catch (error) {
-            console.error("Error logging out:", error);
-            alert(error.message);
-        }
-    });
+    logoutBtn.addEventListener("click", logout);
 }
 
 const searchForm = document.getElementById("search-form");
@@ -148,7 +160,6 @@ searchForm.addEventListener("submit", async function(event) {
 async function loadRooms(location) {
     try {
         console.log("Fetching rooms from /rooms with location:", location);
-        // Capitalize the location (e.g., 'puri' -> 'Puri')
         const capitalizedLocation = location.charAt(0).toUpperCase() + location.slice(1).toLowerCase();
         const url = capitalizedLocation
             ? `${BACKEND_URL}/rooms?location=${encodeURIComponent(capitalizedLocation)}`
@@ -171,6 +182,7 @@ async function loadRooms(location) {
         return [];
     }
 }
+
 function displayRooms(rooms, checkIn, checkOut) {
     const roomList = document.getElementById("room-list");
     if (!roomList) {
@@ -319,11 +331,11 @@ function displayBookings(bookings) {
             bookingCard.innerHTML = `
                 <h3>${booking.name} at ${booking.hotel_name}</h3>
                 <p>Location: ${booking.location}</p>
-                <p>Check-In: ${booking.checkIn}</p>
-                <p>Check-Out: ${booking.checkOut}</p>
-                <p>Booked On: ${new Date(booking.bookingDate).toLocaleString()}</p>
-                <p>Number of Rooms: ${booking.roomCount}</p>
-                <p>Total: ₹${booking.total}</p>
+                <p>Check-In: ${booking.check_in}</p>
+                <p>Check-Out: ${booking.check_out}</p>
+                <p>Booked On: ${new Date(booking.booking_date).toLocaleString()}</p>
+                <p>Number of Rooms: ${booking.room_count}</p>
+                <p>Total: ₹${booking.total_price}</p>
                 <p>Amenities: ${booking.amenities.join(", ") || "None"}</p>
             `;
             bookingsList.appendChild(bookingCard);
@@ -333,10 +345,11 @@ function displayBookings(bookings) {
     });
     console.log(`Displayed ${bookings.length} bookings.`);
 }
+
 async function logout() {
     try {
         const token = localStorage.getItem("token");
-        console.log("Token before logout request:", token); // Debug log
+        console.log("Token before logout request:", token);
         if (!token || token === "null") {
             console.log("No token found, proceeding with client-side logout");
         } else {
@@ -361,10 +374,10 @@ async function logout() {
         const loginBtn = document.getElementById("login-btn");
         const logoutBtn = document.getElementById("logout-btn");
         const bookingHistorySection = document.getElementById("booking-history-section");
-        loginForm.style.display = "none";
-        loginBtn.style.display = "inline-block";
-        logoutBtn.style.display = "none";
-        bookingHistorySection.style.display = "none";
+        if (loginForm) loginForm.style.display = "none";
+        if (loginBtn) loginBtn.style.display = "inline-block";
+        if (logoutBtn) logoutBtn.style.display = "none";
+        if (bookingHistorySection) bookingHistorySection.style.display = "none";
         alert("Logged out successfully!");
 
         if (lastSearch) {
@@ -380,10 +393,10 @@ async function logout() {
         const loginBtn = document.getElementById("login-btn");
         const logoutBtn = document.getElementById("logout-btn");
         const bookingHistorySection = document.getElementById("booking-history-section");
-        loginForm.style.display = "none";
-        loginBtn.style.display = "inline-block";
-        logoutBtn.style.display = "none";
-        bookingHistorySection.style.display = "none";
+        if (loginForm) loginForm.style.display = "none";
+        if (loginBtn) loginBtn.style.display = "inline-block";
+        if (logoutBtn) logoutBtn.style.display = "none";
+        if (bookingHistorySection) bookingHistorySection.style.display = "none";
         alert("Logged out successfully!");
 
         if (lastSearch) {
@@ -392,3 +405,8 @@ async function logout() {
         }
     }
 }
+
+// Call setupLoginButton after DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    setupLoginButton();
+});
