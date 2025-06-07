@@ -24,6 +24,44 @@
         h1, label, p, th, td {
             color: #fff;
         }
+        /* Custom styles for room cards */
+        .card {
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: scale(1.05);
+        }
+        .card-img-top {
+            height: 150px;
+            object-fit: cover;
+        }
+        .card-body {
+            padding: 10px;
+        }
+        .card-title {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        .card-text {
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+        }
+        .book-now {
+            font-size: 0.9rem;
+            padding: 5px 10px;
+        }
+        /* Custom styles for modals */
+        .modal-content {
+            background-color: #fff; /* Ensure modals have a solid background */
+            color: #000; /* Black text for readability */
+        }
+        .modal-header, .modal-body, .modal-footer {
+            color: #000; /* Ensure all modal text is readable */
+        }
+        .modal label, .modal input {
+            color: #000; /* Black text for labels and inputs */
+            display: block; /* Ensure fields are visible */
+        }
     </style>
 </head>
 <body>
