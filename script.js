@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     async function checkSession() {
-        const currentToken = localStorage.getItem("token"); // Fetch token dynamically
+        const currentToken = localStorage.getItem("token");
         console.log("Checking session with token:", currentToken);
         try {
             const response = await fetch("https://hotel-backend-n0n6.onrender.com/check-session", {
@@ -65,7 +65,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("location").value = lastSearch.location;
         document.getElementById("checkIn").value = lastSearch.checkIn;
         document.getElementById("checkOut").value = lastSearch.checkOut;
-        // Removed automatic searchRooms call to prevent fetching on reload
     }
 
     loginBtn.addEventListener("click", () => {
@@ -136,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function displayRooms(rooms, checkIn, checkOut) {
         const resultsDiv = document.getElementById("results");
-        resultsDiv.innerHTML = ""; // Clear previous results
+        resultsDiv.innerHTML = "";
 
         if (!rooms || rooms.length === 0) {
             resultsDiv.innerHTML = "<p>No rooms to display.</p>";
@@ -150,7 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
         rooms.forEach((room, index) => {
             try {
                 const colDiv = document.createElement("div");
-                colDiv.className = "col-md-4 mb-4";
+                colDiv.className = "col-md-4 mb-2"; // Changed mb-4 to mb-2
 
                 const cardDiv = document.createElement("div");
                 cardDiv.className = "card";
