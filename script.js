@@ -1,7 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const token = localStorage.getItem("token");
-    console.log("Token on page load:", token);
-
     const loginBtn = document.getElementById("loginBtn");
     const logoutBtn = document.getElementById("logoutBtn");
     const loginModal = new bootstrap.Modal(document.getElementById("loginModal"));
@@ -33,16 +30,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     async function checkSession() {
-        console.log("Checking session with token:", token); // Debug log
+        const currentToken = localStorage.getItem("token"); // Fetch token dynamically
+        console.log("Checking session with token:", currentToken);
         try {
             const response = await fetch("https://hotel-backend-n0n6.onrender.com/check-session", {
                 method: "GET",
                 headers: {
-                    "Authorization": `Bearer ${token}`,
+                    "Authorization": `Bearer ${currentToken}`,
                 },
             });
             const data = await response.json();
-            console.log("Check session response:", data); // Debug log
+            console.log("Check session response:", data);
             if (data.loggedIn) {
                 loginBtn.style.display = "none";
                 logoutBtn.style.display = "block";
@@ -67,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("location").value = lastSearch.location;
         document.getElementById("checkIn").value = lastSearch.checkIn;
         document.getElementById("checkOut").value = lastSearch.checkOut;
-        searchRooms(lastSearch.location, lastSearch.checkIn, lastSearch.checkOut);
+        // Removed automatic searchRooms call to prevent fetching on reload
     }
 
     loginBtn.addEventListener("click", () => {
@@ -76,10 +74,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loginForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        console.log("Login form submitted"); // Debug log
+        console.log("Login form submitted");
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
-        console.log(`Attempting login with email: ${email}`); // Debug log
+        console.log(`Attempting login with email: ${email}`);
 
         try {
             const response = await fetch("https://hotel-backend-n0n6.onrender.com/login", {
@@ -91,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             const data = await response.json();
-            console.log("Login response:", data); // Debug log
+            console.log("Login response:", data);
             if (response.ok) {
                 localStorage.setItem("token", data.token);
                 loginModal.hide();
