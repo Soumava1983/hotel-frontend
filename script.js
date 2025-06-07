@@ -33,6 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     async function checkSession() {
+        console.log("Checking session with token:", token); // Debug log
         try {
             const response = await fetch("https://hotel-backend-n0n6.onrender.com/check-session", {
                 method: "GET",
@@ -41,6 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
             });
             const data = await response.json();
+            console.log("Check session response:", data); // Debug log
             if (data.loggedIn) {
                 loginBtn.style.display = "none";
                 logoutBtn.style.display = "block";
@@ -74,8 +76,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loginForm.addEventListener("submit", async (e) => {
         e.preventDefault();
+        console.log("Login form submitted"); // Debug log
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
+        console.log(`Attempting login with email: ${email}`); // Debug log
 
         try {
             const response = await fetch("https://hotel-backend-n0n6.onrender.com/login", {
@@ -87,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             const data = await response.json();
+            console.log("Login response:", data); // Debug log
             if (response.ok) {
                 localStorage.setItem("token", data.token);
                 loginModal.hide();
