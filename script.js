@@ -247,6 +247,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     const cardDiv = document.createElement("div");
                     cardDiv.className = "card";
 
+                    const amenitiesText = typeof room.amenities === 'string' && room.amenities.trim() !== ''
+                        ? room.amenities
+                        : Array.isArray(room.amenities) && room.amenities.length > 0
+                        ? room.amenities.join(", ")
+                        : "None";
+
                     cardDiv.innerHTML = `
                         <img src="${room.image}" class="card-img-top" alt="${room.name}">
                         <div class="card-body">
@@ -254,9 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <p class="card-text">Location: ${room.location}</p>
                             <p class="card-text">Price: ₹${room.price} per night</p>
                             <p class="card-text">Available Rooms: ${room.available}</p>
-                            <p class="card-text">Amenities: ${
-                                Array.isArray(room.amenities) ? room.amenities.join(", ") : room.amenities || "None"
-                            }</p>
+                            <p class="card-text">Amenities: ${amenitiesText}</p>
                             <button class="btn btn-primary book-now" data-room-id="${room.id}">Book Now</button>
                         </div>
                     `;
