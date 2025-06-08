@@ -1,8 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const registerBtn = document.getElementById("registerBtn");
     const loginBtn = document.getElementById("loginBtn");
     const logoutBtn = document.getElementById("logoutBtn");
+    const registerModal = new bootstrap.Modal(document.getElementById("registerModal"));
     const loginModal = new bootstrap.Modal(document.getElementById("loginModal"));
     const searchForm = document.getElementById("searchForm");
+    const registerForm = document.getElementById("registerForm");
     const loginForm = document.getElementById("loginForm");
     const checkInInput = document.getElementById("checkIn");
     const checkOutInput = document.getElementById("checkOut");
@@ -97,10 +100,12 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("Check session response:", data);
             if (data.loggedIn) {
                 loginBtn.style.display = "none";
+                registerBtn.style.display = "none";
                 logoutBtn.style.display = "block";
                 bookingsBtn.style.display = "block";
             } else {
                 loginBtn.style.display = "block";
+                registerBtn.style.display = "block";
                 logoutBtn.style.display = "none";
                 bookingsBtn.style.display = "none";
                 localStorage.removeItem("token");
@@ -108,6 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
             console.error("Error checking session:", error);
             loginBtn.style.display = "block";
+            registerBtn.style.display = "block";
             logoutBtn.style.display = "none";
             bookingsBtn.style.display = "none";
         }
@@ -121,8 +127,43 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("checkOut").value = lastSearch.checkOut;
     }
 
+    registerBtn.addEventListener("click", () => {
+        registerModal.show();
+    });
+
     loginBtn.addEventListener("click", () => {
         loginModal.show();
+    });
+
+    registerForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        console.log("Register form submitted");
+        const email = document.getElementById("registerEmail").value;
+        const password = document.getElementById("registerPassword").value;
+        console.log(`Attempting registration with email: ${email}`);
+
+        try {
+            const response = await fetch("https://hotel-backend-n0n6.onrender.com/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await response.json();
+            console.log("Register response:", JSON.stringify(data, null, 2));
+            if (response.ok) {
+                alert("Registration successful! Please log in.");
+                registerModal.hide();
+                loginModal.show();
+            } else {
+                alert(data.error || "Registration failed");
+            }
+        } catch (error) {
+            console.error("Error during registration:", error);
+            alert("An error occurred during registration");
+        }
     });
 
     loginForm.addEventListener("submit", async (e) => {
@@ -347,7 +388,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
             });
 
-            const bookings = await response.json();
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to fetch bookings");
+            }
+
+            const bookings = Array.isArray(data) ? data : [];
             bookingsTable.innerHTML = "";
 
             if (bookings.length === 0) {
@@ -371,7 +417,7 @@ document.addEventListener("DOMContentLoaded", () => {
             bookingsModal.show();
         } catch (error) {
             console.error("Error fetching bookings:", error);
-            alert("Error fetching bookings");
+            alert("Error fetching bookings: " + error.message);
         }
     });
 
@@ -388,10 +434,11 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             const data = await response.json();
-            console.log(data.message);
+            console.log("Logged out successfully");
 
             localStorage.removeItem("token");
             loginBtn.style.display = "block";
+            registerBtn.style.display = "block";
             logoutBtn.style.display = "none";
             bookingsBtn.style.display = "none";
 
@@ -402,6 +449,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Error during logout:", error);
             localStorage.removeItem("token");
             loginBtn.style.display = "block";
+            registerBtn.style.display = "block";
             logoutBtn.style.display = "none";
             bookingsBtn.style.display = "none";
         }

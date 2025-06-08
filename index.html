@@ -41,13 +41,13 @@
         .card-title {
             font-size: 1rem;
             margin-bottom: 0.3rem;
-            color: #333; /* Ensure visibility on light card background */
+            color: #333;
         }
         .card-text {
             font-size: 0.8rem;
             margin-bottom: 0.1rem;
-            color: #333; /* Ensure visibility on light card background */
-            line-height: 1.2; /* Improve readability */
+            color: #333;
+            line-height: 1.2;
         }
         .book-now {
             font-size: 0.8rem;
@@ -72,6 +72,8 @@
         <h1 class="text-center mb-4">Welcome to Bonghomestay.com</h1>
 
         <div class="d-flex justify-content-end mb-3">
+            <a href="gallery.html" class="btn btn-info me-2">Room Gallery</a>
+            <button id="registerBtn" class="btn btn-success me-2" style="display: block;">Register</button>
             <button id="loginBtn" class="btn btn-primary me-2" style="display: none;">Login</button>
             <button id="logoutBtn" class="btn btn-secondary me-2" style="display: none;">Logout</button>
             <button id="bookingsBtn" class="btn btn-info" style="display: none;">View Bookings</button>
@@ -92,100 +94,3 @@
                     <input type="date" class="form-control" id="checkOut" autocomplete="off" required>
                 </div>
                 <div class="col-md-2 d-flex align-items-end mb-3">
-                    <button type="submit" class="btn btn-primary w-100">Search</button>
-                </div>
-            </div>
-        </form>
-
-        <div id="results" class="mb-5"></div>
-
-        <!-- Login Modal -->
-        <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="loginModalLabel">Login</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="loginForm">
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="email" value="test@example.com" autocomplete="email" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="password" class="form-label">Password</label>
-                                <input type="password" class="form-control" id="password" value="password123" autocomplete="current-password" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Login</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Book Modal -->
-        <div class="modal fade" id="bookModal" tabindex="-1" aria-labelledby="bookModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="bookModalLabel">Book Room</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="bookForm">
-                            <input type="hidden" id="roomId">
-                            <div class="mb-3">
-                                <label for="modalCheckIn" class="form-label">Check-In Date</label>
-                                <input type="date" class="form-control" id="modalCheckIn" autocomplete="off" readonly>
-                            </div>
-                            <div class="mb-3">
-                                <label for="modalCheckOut" class="form-label">Check-Out Date</label>
-                                <input type="date" class="form-control" id="modalCheckOut" autocomplete="off" readonly>
-                            </div>
-                            <div class="mb-3">
-                                <label for="roomCount" class="form-label">Number of Rooms</label>
-                                <input type="number" class="form-control" id="roomCount" min="1" value="1" autocomplete="off" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Confirm Booking</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bookings Modal -->
-        <div class="modal fade" id="bookingsModal" tabindex="-1" aria-labelledby="bookingsModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="bookingsModalLabel">My Bookings</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <table class="table" id="bookingsTable">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Room</th>
-                                    <th>Location</th>
-                                    <th>Check-In</th>
-                                    <th>Check-Out</th>
-                                    <th>Rooms</th>
-                                    <th>Total Price</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap JS Bundle (includes Popper.js) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <!-- Your script.js -->
-    <script src="script.js"></script>
-</body>
-</html>
