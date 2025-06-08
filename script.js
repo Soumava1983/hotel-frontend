@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.getElementById("loginForm");
     const checkInInput = document.getElementById("checkIn");
     const checkOutInput = document.getElementById("checkOut");
+    const locationInput = document.getElementById("location");
     const bookModalElement = document.getElementById("bookModal");
     const bookModal = new bootstrap.Modal(bookModalElement);
     const bookForm = document.getElementById("bookForm");
@@ -28,6 +29,59 @@ document.addEventListener("DOMContentLoaded", () => {
             checkOutInput.value = "";
         }
     });
+
+    // Clear inputs on page reload
+    window.addEventListener("load", () => {
+        locationInput.value = "";
+        checkInInput.value = "";
+        checkOutInput.value = "";
+        localStorage.removeItem("lastSearch");
+    });
+
+    // Autocomplete for location input
+    async function fetchLocations() {
+        try {
+            const response = await fetch("https://hotel-backend-n0n6.onrender.com/rooms");
+            const rooms = await response.json();
+            const locations = [...new Set(rooms.map(room => room.location))].sort();
+            return locations;
+        } catch (error) {
+            console.error("Error fetching locations for autocomplete:", error);
+            return [];
+        }
+    }
+
+    locationInput.addEventListener("input", async () => {
+        const query = locationInput.value.toLowerCase().trim();
+        if (query.length < 2) {
+            removeDatalist();
+            return;
+        }
+
+        const locations = await fetchLocations();
+        const filteredLocations = locations.filter(loc => loc.toLowerCase().includes(query));
+
+        removeDatalist();
+        const datalist = document.createElement("datalist");
+        datalist.id = "locationSuggestions";
+
+        filteredLocations.forEach(loc => {
+            const option = document.createElement("option");
+            option.value = loc;
+            datalist.appendChild(option);
+        });
+
+        document.body.appendChild(datalist);
+        locationInput.setAttribute("list", "locationSuggestions");
+    });
+
+    function removeDatalist() {
+        const existingDatalist = document.getElementById("locationSuggestions");
+        if (existingDatalist) {
+            existingDatalist.remove();
+        }
+        locationInput.removeAttribute("list");
+    }
 
     async function checkSession() {
         const currentToken = localStorage.getItem("token");
@@ -88,7 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             const data = await response.json();
-            console.log("Login response:", data);
+            console.log("Login response:", JSON.stringify(data, null, 2));
             if (response.ok) {
                 localStorage.setItem("token", data.token);
                 loginModal.hide();
@@ -143,40 +197,81 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const rowDiv = document.createElement("div");
-        rowDiv.className = "row";
+        // Log the first room to inspect its properties
+        console.log("Sample room data:", rooms[0]);
 
-        rooms.forEach((room, index) => {
-            try {
-                const colDiv = document.createElement("div");
-                colDiv.className = "col-md-4 mb-2"; // Changed mb-4 to mb-2
+        // Define room type order
+        const roomTypeOrder = { "Standard": 1, "Deluxe": 2, "Suite": 3 };
 
-                const cardDiv = document.createElement("div");
-                cardDiv.className = "card";
-
-                cardDiv.innerHTML = `
-                    <img src="${room.image}" class="card-img-top" alt="${room.name}">
-                    <div class="card-body">
-                        <h5 class="card-title">${room.name}</h5>
-                        <p class="card-text">Hotel: ${room.hotel_name}</p>
-                        <p class="card-text">Location: ${room.location}</p>
-                        <p class="card-text">Price: ₹${room.price} per night</p>
-                        <p class="card-text">Available Rooms: ${room.available}</p>
-                        <p class="card-text">Amenities: ${
-                            Array.isArray(room.amenities) ? room.amenities.join(", ") : room.amenities || "None"
-                        }</p>
-                        <button class="btn btn-primary book-now" data-room-id="${room.id}">Book Now</button>
-                    </div>
-                `;
-
-                colDiv.appendChild(cardDiv);
-                rowDiv.appendChild(colDiv);
-            } catch (error) {
-                console.error(`Error rendering room ${room.id}:`, error);
+        // Group rooms by hotel_name (or fallback to 'hotel' or a default)
+        const groupedRooms = rooms.reduce((acc, room) => {
+            const hotelName = room.hotel_name || room.hotel || "Unknown Hotel";
+            if (!acc[hotelName]) {
+                acc[hotelName] = [];
             }
+            acc[hotelName].push(room);
+            return acc;
+        }, {});
+
+        // Sort hotels alphabetically
+        const sortedHotels = Object.keys(groupedRooms).sort();
+
+        // Display rooms grouped by hotel
+        sortedHotels.forEach(hotelName => {
+            const hotelRooms = groupedRooms[hotelName];
+
+            // Sort rooms by type (Standard, Deluxe, Suite)
+            hotelRooms.sort((a, b) => {
+                const orderA = roomTypeOrder[a.name] || 999;
+                const orderB = roomTypeOrder[b.name] || 999;
+                return orderA - orderB;
+            });
+
+            // Create a section for the hotel
+            const hotelSection = document.createElement("div");
+            hotelSection.className = "mb-4";
+
+            const hotelHeading = document.createElement("h3");
+            hotelHeading.className = "text-white mb-3";
+            hotelHeading.textContent = hotelName;
+            hotelSection.appendChild(hotelHeading);
+
+            const rowDiv = document.createElement("div");
+            rowDiv.className = "row";
+
+            hotelRooms.forEach((room, index) => {
+                try {
+                    const colDiv = document.createElement("div");
+                    colDiv.className = "col-md-4 mb-2";
+
+                    const cardDiv = document.createElement("div");
+                    cardDiv.className = "card";
+
+                    cardDiv.innerHTML = `
+                        <img src="${room.image}" class="card-img-top" alt="${room.name}">
+                        <div class="card-body">
+                            <h5 class="card-title">${room.name}</h5>
+                            <p class="card-text">Location: ${room.location}</p>
+                            <p class="card-text">Price: ₹${room.price} per night</p>
+                            <p class="card-text">Available Rooms: ${room.available}</p>
+                            <p class="card-text">Amenities: ${
+                                Array.isArray(room.amenities) ? room.amenities.join(", ") : room.amenities || "None"
+                            }</p>
+                            <button class="btn btn-primary book-now" data-room-id="${room.id}">Book Now</button>
+                        </div>
+                    `;
+
+                    colDiv.appendChild(cardDiv);
+                    rowDiv.appendChild(colDiv);
+                } catch (error) {
+                    console.error(`Error rendering room ${room.id}:`, error);
+                }
+            });
+
+            hotelSection.appendChild(rowDiv);
+            resultsDiv.appendChild(hotelSection);
         });
 
-        resultsDiv.appendChild(rowDiv);
         console.log(`Displayed ${rooms.length} rooms.`);
 
         document.querySelectorAll(".book-now").forEach(button => {
@@ -258,8 +353,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
                         <td>${booking.id}</td>
-                        <td>${booking.hotel_name} - ${booking.name}</td>
-                        <td>${booking.location}</td>
+                        <td>${booking.rooms.hotel_name} - ${booking.rooms.name}</td>
+                        <td>${booking.rooms.location}</td>
                         <td>${booking.check_in}</td>
                         <td>${booking.check_out}</td>
                         <td>${booking.room_count}</td>
