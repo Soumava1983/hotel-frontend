@@ -1,12 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const registerBtn = document.getElementById("registerBtn");
     const loginBtn = document.getElementById("loginBtn");
     const logoutBtn = document.getElementById("logoutBtn");
-    const registerModal = new bootstrap.Modal(document.getElementById("registerModal"));
+    const registerFromLoginBtn = document.getElementById("registerFromLoginBtn");
     const loginModal = new bootstrap.Modal(document.getElementById("loginModal"));
+    const registerModal = new bootstrap.Modal(document.getElementById("registerModal"));
     const searchForm = document.getElementById("searchForm");
-    const registerForm = document.getElementById("registerForm");
     const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
     const checkInInput = document.getElementById("checkIn");
     const checkOutInput = document.getElementById("checkOut");
     const locationInput = document.getElementById("location");
@@ -100,12 +100,10 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("Check session response:", data);
             if (data.loggedIn) {
                 loginBtn.style.display = "none";
-                registerBtn.style.display = "none";
                 logoutBtn.style.display = "block";
                 bookingsBtn.style.display = "block";
             } else {
                 loginBtn.style.display = "block";
-                registerBtn.style.display = "block";
                 logoutBtn.style.display = "none";
                 bookingsBtn.style.display = "none";
                 localStorage.removeItem("token");
@@ -113,7 +111,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
             console.error("Error checking session:", error);
             loginBtn.style.display = "block";
-            registerBtn.style.display = "block";
             logoutBtn.style.display = "none";
             bookingsBtn.style.display = "none";
         }
@@ -127,43 +124,13 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("checkOut").value = lastSearch.checkOut;
     }
 
-    registerBtn.addEventListener("click", () => {
-        registerModal.show();
-    });
-
     loginBtn.addEventListener("click", () => {
         loginModal.show();
     });
 
-    registerForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        console.log("Register form submitted");
-        const email = document.getElementById("registerEmail").value;
-        const password = document.getElementById("registerPassword").value;
-        console.log(`Attempting registration with email: ${email}`);
-
-        try {
-            const response = await fetch("https://hotel-backend-n0n6.onrender.com/register", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ email, password }),
-            });
-
-            const data = await response.json();
-            console.log("Register response:", JSON.stringify(data, null, 2));
-            if (response.ok) {
-                alert("Registration successful! Please log in.");
-                registerModal.hide();
-                loginModal.show();
-            } else {
-                alert(data.error || "Registration failed");
-            }
-        } catch (error) {
-            console.error("Error during registration:", error);
-            alert("An error occurred during registration");
-        }
+    registerFromLoginBtn.addEventListener("click", () => {
+        loginModal.hide();
+        registerModal.show();
     });
 
     loginForm.addEventListener("submit", async (e) => {
@@ -194,6 +161,37 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
             console.error("Error during login:", error);
             alert("An error occurred during login");
+        }
+    });
+
+    registerForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        console.log("Register form submitted");
+        const email = document.getElementById("registerEmail").value;
+        const password = document.getElementById("registerPassword").value;
+        console.log(`Attempting registration with email: ${email}`);
+
+        try {
+            const response = await fetch("https://hotel-backend-n0n6.onrender.com/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await response.json();
+            console.log("Register response:", JSON.stringify(data, null, 2));
+            if (response.ok) {
+                alert("Registration successful! Please log in.");
+                registerModal.hide();
+                loginModal.show();
+            } else {
+                alert(data.error || "Registration failed");
+            }
+        } catch (error) {
+            console.error("Error during registration:", error);
+            alert("An error occurred during registration");
         }
     });
 
@@ -238,13 +236,10 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // Log the first room to inspect its properties
         console.log("Sample room data:", rooms[0]);
 
-        // Define room type order
         const roomTypeOrder = { "Standard": 1, "Deluxe": 2, "Suite": 3 };
 
-        // Group rooms by hotel_name (or fallback to 'hotel' or a default)
         const groupedRooms = rooms.reduce((acc, room) => {
             const hotelName = room.hotel_name || room.hotel || "Unknown Hotel";
             if (!acc[hotelName]) {
@@ -254,21 +249,17 @@ document.addEventListener("DOMContentLoaded", () => {
             return acc;
         }, {});
 
-        // Sort hotels alphabetically
         const sortedHotels = Object.keys(groupedRooms).sort();
 
-        // Display rooms grouped by hotel
         sortedHotels.forEach(hotelName => {
             const hotelRooms = groupedRooms[hotelName];
 
-            // Sort rooms by type (Standard, Deluxe, Suite)
             hotelRooms.sort((a, b) => {
                 const orderA = roomTypeOrder[a.name] || 999;
                 const orderB = roomTypeOrder[b.name] || 999;
                 return orderA - orderB;
             });
 
-            // Create a section for the hotel
             const hotelSection = document.createElement("div");
             hotelSection.className = "mb-4";
 
@@ -438,7 +429,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             localStorage.removeItem("token");
             loginBtn.style.display = "block";
-            registerBtn.style.display = "block";
             logoutBtn.style.display = "none";
             bookingsBtn.style.display = "none";
 
@@ -449,7 +439,6 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Error during logout:", error);
             localStorage.removeItem("token");
             loginBtn.style.display = "block";
-            registerBtn.style.display = "block";
             logoutBtn.style.display = "none";
             bookingsBtn.style.display = "none";
         }

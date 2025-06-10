@@ -54,7 +54,11 @@
 
             try {
                 const response = await fetch("https://hotel-backend-n0n6.onrender.com/rooms");
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
                 const rooms = await response.json();
+                console.log("Rooms fetched for gallery:", rooms);
 
                 if (!rooms || rooms.length === 0) {
                     galleryDiv.innerHTML = "<p>No rooms to display.</p>";
