@@ -89,13 +89,28 @@ document.addEventListener("DOMContentLoaded", () => {
     async function checkSession() {
         const currentToken = localStorage.getItem("token");
         console.log("Checking session with token:", currentToken);
+        if (!currentToken) {
+            console.log("No token found, user is not logged in");
+            loginBtn.style.display = "block";
+            logoutBtn.style.display = "none";
+            bookingsBtn.style.display = "none";
+            return;
+        }
+
         try {
             const response = await fetch("https://hotel-backend-n0n6.onrender.com/check-session", {
                 method: "GET",
                 headers: {
                     "Authorization": `Bearer ${currentToken}`,
+                    "Content-Type": "application/json", // Added for clarity
                 },
             });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`HTTP error ${response.status}: ${text}`);
+            }
+
             const data = await response.json();
             console.log("Check session response:", data);
             if (data.loggedIn) {
@@ -103,6 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 logoutBtn.style.display = "block";
                 bookingsBtn.style.display = "block";
             } else {
+                console.log("Session invalid:", data.error);
                 loginBtn.style.display = "block";
                 logoutBtn.style.display = "none";
                 bookingsBtn.style.display = "none";
@@ -113,6 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
             loginBtn.style.display = "block";
             logoutBtn.style.display = "none";
             bookingsBtn.style.display = "none";
+            localStorage.removeItem("token");
         }
     }
 
@@ -348,16 +365,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Authorization": `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                    roomId: parseInt(roomId),
-                    checkIn,
-                    checkOut,
-                    roomCount,
+                    room_id: parseInt(roomId), // Match server expected key
+                    check_in: checkIn, // Match server expected key
+                    check_out: checkOut, // Match server expected key
+                    // roomCount is not used by the server, but included in case you add it later
                 }),
             });
 
             const data = await response.json();
             if (response.ok) {
-                alert(`Booking successful! Total: ₹${data.total}`);
+                alert(`Booking successful!`);
                 bookModal.hide();
                 searchRooms(lastSearch.location, lastSearch.checkIn, lastSearch.checkOut);
             } else {
