@@ -349,42 +349,43 @@ document.addEventListener("DOMContentLoaded", () => {
         bookModal.show();
     }
 
-    bookForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const token = localStorage.getItem("token");
-        const roomId = document.getElementById("roomId").value;
-        const checkIn = document.getElementById("modalCheckIn").value;
-        const checkOut = document.getElementById("modalCheckOut").value;
-        const roomCount = parseInt(document.getElementById("roomCount").value);
+bookForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem("token");
+    const roomId = document.getElementById("roomId").value;
+    const checkIn = document.getElementById("modalCheckIn").value;
+    const checkOut = document.getElementById("modalCheckOut").value;
+    const roomCount = parseInt(document.getElementById("roomCount").value);
 
-        try {
-            const response = await fetch("https://hotel-backend-n0n6.onrender.com/book", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    room_id: parseInt(roomId), // Match server expected key
-                    check_in: checkIn, // Match server expected key
-                    check_out: checkOut, // Match server expected key
-                    // roomCount is not used by the server, but included in case you add it later
-                }),
-            });
+    try {
+        const response = await fetch("https://hotel-backend-n0n6.onrender.com/book", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                room_id: parseInt(roomId),
+                check_in: checkIn,
+                check_out: checkOut,
+                room_count: roomCount, // Include room_count
+            }),
+        });
 
-            const data = await response.json();
-            if (response.ok) {
-                alert(`Booking successful!`);
-                bookModal.hide();
-                searchRooms(lastSearch.location, lastSearch.checkIn, lastSearch.checkOut);
-            } else {
-                alert(data.error || "Booking failed");
-            }
-        } catch (error) {
-            console.error("Error during booking:", error);
-            alert("An error occurred during booking");
+        const data = await response.json();
+        if (response.ok) {
+            alert(`Booking successful! Total: ₹${data.total || 'N/A'}`); // Handle missing total
+            bookModal.hide();
+            searchRooms(lastSearch.location, lastSearch.checkIn, lastSearch.checkOut);
+        } else {
+            console.error('Booking failed:', data.error);
+            alert(data.error || "Booking failed");
         }
-    });
+    } catch (error) {
+        console.error("Error during booking:", error);
+        alert("An error occurred during booking: " + error.message);
+    }
+});
 
     bookingsBtn.addEventListener("click", async () => {
         const token = localStorage.getItem("token");
