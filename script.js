@@ -387,48 +387,49 @@ bookForm.addEventListener("submit", async (e) => {
     }
 });
 
-    bookingsBtn.addEventListener("click", async () => {
-        const token = localStorage.getItem("token");
-        try {
-            const response = await fetch("https://hotel-backend-n0n6.onrender.com/bookings", {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                },
-            });
+bookingsBtn.addEventListener("click", async () => {
+    const token = localStorage.getItem("token");
+    try {
+        const response = await fetch("https://hotel-backend-n0n6.onrender.com/bookings", {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+            },
+        });
 
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.error || "Failed to fetch bookings");
-            }
-
-            const bookings = Array.isArray(data) ? data : [];
-            bookingsTable.innerHTML = "";
-
-            if (bookings.length === 0) {
-                bookingsTable.innerHTML = "<tr><td colspan='7'>No bookings found.</td></tr>";
-            } else {
-                bookings.forEach(booking => {
-                    const row = document.createElement("tr");
-                    row.innerHTML = `
-                        <td>${booking.id}</td>
-                        <td>${booking.rooms.hotel_name} - ${booking.rooms.name}</td>
-                        <td>${booking.rooms.location}</td>
-                        <td>${booking.check_in}</td>
-                        <td>${booking.check_out}</td>
-                        <td>${booking.room_count}</td>
-                        <td>₹${booking.total_price}</td>
-                    `;
-                    bookingsTable.appendChild(row);
-                });
-            }
-
-            bookingsModal.show();
-        } catch (error) {
-            console.error("Error fetching bookings:", error);
-            alert("Error fetching bookings: " + error.message);
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || "Failed to fetch bookings");
         }
-    });
+
+        console.log("Bookings received:", data); // Add logging
+        const bookings = Array.isArray(data) ? data : [];
+        bookingsTable.innerHTML = "";
+
+        if (bookings.length === 0) {
+            bookingsTable.innerHTML = "<tr><td colspan='7'>No bookings found.</td></tr>";
+        } else {
+            bookings.forEach(booking => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${booking.id}</td>
+                    <td>${booking.rooms.hotel_name} - ${booking.rooms.name}</td>
+                    <td>${booking.rooms.location}</td>
+                    <td>${booking.check_in}</td>
+                    <td>${booking.check_out}</td>
+                    <td>${booking.room_count || 'N/A'}</td>
+                    <td>₹${booking.total_price || 'N/A'}</td>
+                `;
+                bookingsTable.appendChild(row);
+            });
+        }
+
+        bookingsModal.show();
+    } catch (error) {
+        console.error("Error fetching bookings:", error);
+        alert("Error fetching bookings: " + error.message);
+    }
+});
 
     logoutBtn.addEventListener("click", async () => {
         const token = localStorage.getItem("token");
