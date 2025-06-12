@@ -368,18 +368,18 @@ bookForm.addEventListener("submit", async (e) => {
                 room_id: parseInt(roomId),
                 check_in: checkIn,
                 check_out: checkOut,
-                room_count: roomCount, // Include room_count
+                room_count: roomCount,
             }),
         });
 
         const data = await response.json();
         if (response.ok) {
-            alert(`Booking successful! Total: ₹${data.total || 'N/A'}`); // Handle missing total
+            alert(`Booking successful! Total: ₹${data.total || 'N/A'}`);
             bookModal.hide();
             searchRooms(lastSearch.location, lastSearch.checkIn, lastSearch.checkOut);
         } else {
-            console.error('Booking failed:', data.error);
-            alert(data.error || "Booking failed");
+            console.error('Booking failed:', data);
+            alert(data.error || "Booking failed: " + (data.details || "Unknown error"));
         }
     } catch (error) {
         console.error("Error during booking:", error);
