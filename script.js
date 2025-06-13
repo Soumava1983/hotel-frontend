@@ -379,7 +379,7 @@ bookForm.addEventListener("submit", async (e) => {
             searchRooms(lastSearch.location, lastSearch.checkIn, lastSearch.checkOut);
         } else {
             console.error('Booking failed:', data);
-            alert(`Booking failed: ${data.error || "Unknown error"} - ${data.details || "No details"}`);
+            alert(`Booking failed: ${data.error || "Unknown error"} - ${data.details || "No details available"}`);
         }
     } catch (error) {
         console.error("Error during booking:", error);
