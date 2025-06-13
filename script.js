@@ -23,6 +23,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const bookModal = new bootstrap.Modal(bookModalElement);
     const bookingsModal = new bootstrap.Modal(bookingsModalElement);
 
+    // Fix accessibility issue: Move focus after loginModal is hidden
+    loginModalElement.addEventListener("hidden.bs.modal", () => {
+        // Move focus to the login button in the navbar
+        loginBtn.focus();
+    });
+
     let lastSearch = JSON.parse(localStorage.getItem("lastSearch")) || null;
     let allRooms = []; // Cache rooms for booking modal
 
@@ -82,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // Autocomplete for location input
+    // Autocomplete for location input using datalist
     locationInput.addEventListener("input", debounce(async () => {
         const query = locationInput.value.toLowerCase().trim();
         if (query.length < 2) {
@@ -274,7 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
         await searchRooms(location, checkIn, checkOut);
     });
 
-    // Fetch and display rooms
+    // Fetch and display hotels
     async function searchRooms(location, checkIn, checkOut) {
         console.log("Fetching rooms from /rooms with location: " + location);
         try {
@@ -284,15 +290,20 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             allRooms = await response.json();
             console.log("Rooms received:", allRooms);
-            displayRooms(allRooms, checkIn, checkOut);
+            displayHotels(allRooms, checkIn, checkOut);
         } catch (error) {
             console.error("Error fetching rooms:", error);
             document.getElementById("results").innerHTML = "<p>Error fetching rooms. Please try again later.</p>";
         }
     }
 
-    // Display rooms in the UI
-    function displayRooms(rooms, checkIn, checkOut) {
+    // Function to escape HTML characters for security
+    function escapeHTML(str) {
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    // Display hotels in a table under the searched location
+    function displayHotels(rooms, checkIn, checkOut) {
         const resultsDiv = document.getElementById("results");
         if (!resultsDiv) {
             console.error("Results div not found");
@@ -301,48 +312,91 @@ document.addEventListener("DOMContentLoaded", () => {
         resultsDiv.innerHTML = "";
 
         if (!rooms || rooms.length === 0) {
-            resultsDiv.innerHTML = "<p>No rooms to display.</p>";
-            console.log("No rooms to display.");
+            resultsDiv.innerHTML = "<p>No hotels to display.</p>";
+            console.log("No hotels to display.");
             return;
         }
 
         console.log("Sample room data:", rooms[0]);
 
-        const roomTypeOrder = { "Standard": 1, "Deluxe": 2, "Suite": 3 };
-
-        const groupedRooms = rooms.reduce((acc, room) => {
-            const hotelName = room.hotel_name || room.hotel || "Unknown Hotel";
+        // Group rooms by hotel
+        const groupedHotels = rooms.reduce((acc, room) => {
+            const hotelName = room.hotel_name || "Unknown Hotel";
             if (!acc[hotelName]) {
-                acc[hotelName] = [];
+                acc[hotelName] = {
+                    name: hotelName,
+                    location: room.location || "Unknown Location",
+                    image: room.image || "https://via.placeholder.com/150", // Fallback image
+                    rooms: []
+                };
             }
-            acc[hotelName].push(room);
+            acc[hotelName].rooms.push(room);
             return acc;
         }, {});
 
-        const sortedHotels = Object.keys(groupedRooms).sort();
+        const hotels = Object.values(groupedHotels).sort((a, b) => a.name.localeCompare(b.name));
 
-        sortedHotels.forEach(hotelName => {
-            const hotelRooms = groupedRooms[hotelName];
+        // Group hotels by location
+        const groupedByLocation = hotels.reduce((acc, hotel) => {
+            const location = hotel.location;
+            if (!acc[location]) {
+                acc[location] = [];
+            }
+            acc[location].push(hotel);
+            return acc;
+        }, {});
 
-            hotelRooms.sort((a, b) => {
-                const orderA = roomTypeOrder[a.name] || 999;
-                const orderB = roomTypeOrder[b.name] || 999;
-                return orderA - orderB;
-            });
+        const sortedLocations = Object.keys(groupedByLocation).sort();
 
-            const hotelSection = document.createElement("div");
-            hotelSection.className = "mb-4";
+        sortedLocations.forEach(location => {
+            const locationHotels = groupedByLocation[location];
 
-            const hotelHeading = document.createElement("h3");
-            hotelHeading.className = "text-white mb-3";
-            hotelHeading.textContent = hotelName;
-            hotelSection.appendChild(hotelHeading);
+            const locationSection = document.createElement("div");
+            locationSection.className = "mb-4";
 
-            const rowDiv = document.createElement("div");
-            rowDiv.className = "row";
+            const locationHeading = document.createElement("h3");
+            locationHeading.className = "text-white mb-3";
+            locationHeading.textContent = "Hotels in " + escapeHTML(location);
+            locationSection.appendChild(locationHeading);
 
-            hotelRooms.forEach((room, index) => {
-                try {
+            const table = document.createElement("table");
+            table.className = "table table-bordered table-striped text-white";
+            table.style.backgroundColor = "#343a40"; // Dark background for table
+
+            const thead = document.createElement("thead");
+            thead.innerHTML = `
+                <tr>
+                    <th scope="col">Hotel Name</th>
+                    <th scope="col">Photo</th>
+                    <th scope="col">Location</th>
+                </tr>
+            `;
+            table.appendChild(thead);
+
+            const tbody = document.createElement("tbody");
+            locationHotels.forEach(hotel => {
+                const row = document.createElement("tr");
+                row.innerHTML = [
+                    '<td><a href="#hotel-' + encodeURIComponent(hotel.name) + '" class="text-white">' + escapeHTML(hotel.name) + '</a></td>',
+                    '<td><img src="' + hotel.image + '" alt="' + escapeHTML(hotel.name) + '" style="width: 100px; height: auto;" loading="lazy" onerror="this.src=\'https://via.placeholder.com/150\';"></td>',
+                    '<td>' + escapeHTML(hotel.location) + '</td>'
+                ].join("");
+                tbody.appendChild(row);
+
+                // Create a section for the hotel's rooms (hidden by default, can be toggled or linked)
+                const hotelSection = document.createElement("div");
+                hotelSection.id = "hotel-" + encodeURIComponent(hotel.name);
+                hotelSection.className = "mt-3";
+                hotelSection.style.display = "none"; // Hide by default, can be toggled with JS if needed
+
+                const roomHeading = document.createElement("h4");
+                roomHeading.className = "text-white";
+                roomHeading.textContent = escapeHTML(hotel.name) + " Rooms";
+                hotelSection.appendChild(roomHeading);
+
+                const rowDiv = document.createElement("div");
+                rowDiv.className = "row";
+                hotel.rooms.forEach(room => {
                     const colDiv = document.createElement("div");
                     colDiv.className = "col-md-4 mb-2";
 
@@ -356,29 +410,45 @@ document.addEventListener("DOMContentLoaded", () => {
                         : "None";
 
                     cardDiv.innerHTML = [
-                        '<img src="' + room.image + '" class="card-img-top" alt="' + room.name + '">',
+                        '<img src="' + room.image + '" class="card-img-top" alt="' + escapeHTML(room.name) + '">',
                         '<div class="card-body">',
-                        '<h5 class="card-title">' + room.name + '</h5>',
-                        '<p class="card-text">Location: ' + room.location + '</p>',
+                        '<h5 class="card-title">' + escapeHTML(room.name) + '</h5>',
+                        '<p class="card-text">Location: ' + escapeHTML(room.location) + '</p>',
                         '<p class="card-text">Price: ₹' + room.price + ' per night</p>',
                         '<p class="card-text">Available Rooms: ' + room.available + '</p>',
-                        '<p class="card-text">Amenities: ' + amenitiesText + '</p>',
+                        '<p class="card-text">Amenities: ' + escapeHTML(amenitiesText) + '</p>',
                         '<button class="btn btn-primary book-now" data-room-id="' + room.id + '">Book Now</button>',
                         '</div>'
                     ].join("");
 
                     colDiv.appendChild(cardDiv);
                     rowDiv.appendChild(colDiv);
-                } catch (error) {
-                    console.error("Error rendering room " + room.id + ":", error);
-                }
+                });
+
+                hotelSection.appendChild(rowDiv);
+                locationSection.appendChild(hotelSection);
             });
 
-            hotelSection.appendChild(rowDiv);
-            resultsDiv.appendChild(hotelSection);
+            table.appendChild(tbody);
+            locationSection.appendChild(table);
+            resultsDiv.appendChild(locationSection);
+
+            // Add click event to show/hide hotel rooms
+            table.querySelectorAll("a").forEach(link => {
+                link.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const hotelId = link.getAttribute("href").substring(1); // Remove the "#"
+                    const hotelSection = document.getElementById(hotelId);
+                    if (hotelSection.style.display === "none") {
+                        hotelSection.style.display = "block";
+                    } else {
+                        hotelSection.style.display = "none";
+                    }
+                });
+            });
         });
 
-        console.log("Displayed " + rooms.length + " rooms.");
+        console.log("Displayed " + hotels.length + " hotels.");
 
         // Use event delegation for book-now buttons
         resultsDiv.addEventListener("click", (e) => {
@@ -493,22 +563,25 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Booking list element not found");
             return;
         }
+        console.log("Bookings to display:", bookings); // Debug log
         bookingList.innerHTML = "";
 
         if (!bookings || bookings.length === 0) {
+            console.log("No bookings found to display");
             bookingList.innerHTML = "<p>No bookings found.</p>";
             return;
         }
 
         bookings.forEach((booking) => {
+            console.log("Rendering booking:", booking); // Debug log
             const bookingCard = document.createElement("div");
             bookingCard.className = "booking-card card p-3 mb-3";
             bookingCard.innerHTML = [
                 '<p><strong>Booking ID:</strong> ' + booking.id + '</p>',
-                '<p><strong>Guest Name:</strong> ' + (booking.guest_name || "N/A") + '</p>',
-                '<p><strong>Hotel:</strong> ' + (booking.rooms.hotel_name || "Unknown Hotel") + '</p>',
-                '<p><strong>Room:</strong> ' + (booking.rooms.name || "Unknown Room") + '</p>',
-                '<p><strong>Location:</strong> ' + (booking.rooms.location || "Unknown Location") + '</p>',
+                '<p><strong>Guest Name:</strong> ' + escapeHTML(booking.guest_name || "N/A") + '</p>',
+                '<p><strong>Hotel:</strong> ' + escapeHTML(booking.rooms?.hotel_name || "Unknown Hotel") + '</p>',
+                '<p><strong>Room:</strong> ' + escapeHTML(booking.rooms?.name || "Unknown Room") + '</p>',
+                '<p><strong>Location:</strong> ' + escapeHTML(booking.rooms?.location || "Unknown Location") + '</p>',
                 '<p><strong>Check-In:</strong> ' + booking.check_in + '</p>',
                 '<p><strong>Check-Out:</strong> ' + booking.check_out + '</p>',
                 '<p><strong>Number of Adults:</strong> ' + (booking.number_of_adults || 0) + '</p>',
@@ -535,88 +608,55 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Generate booking slip as PDF
+    // Generate booking slip as PDF using jsPDF
     function generateBookingSlip(booking) {
-        // Escape LaTeX special characters
-        function escapeLatex(str) {
-            if (typeof str !== "string") return "N/A";
-            return str
-                .replace(/&/g, "\\&")
-                .replace(/%/g, "\\%")
-                .replace(/#/g, "\\#")
-                .replace(/_/g, "\\_")
-                .replace(/{/g, "\\{")
-                .replace(/}/g, "\\}");
-        }
+        // Destructure jsPDF from the global window object
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
 
-        // Use fallbacks to prevent undefined errors
-        const hotelName = escapeLatex(booking.rooms ? booking.rooms.hotel_name : "Unknown Hotel");
-        const location = escapeLatex(booking.rooms ? booking.rooms.location : "Unknown Location");
-        const guestName = escapeLatex(booking.guest_name || "N/A");
-        const roomName = escapeLatex(booking.rooms ? booking.rooms.name : "Unknown Room");
-        const checkIn = escapeLatex(booking.check_in || "N/A");
-        const checkOut = escapeLatex(booking.check_out || "N/A");
-        const numberOfAdults = booking.number_of_adults != null ? booking.number_of_adults : 0;
-        const numberOfChildren = booking.number_of_children != null ? booking.number_of_children : 0;
-        const roomCount = booking.room_count != null ? booking.room_count : 0;
-        const totalPrice = booking.total_price != null ? booking.total_price : "N/A";
+        // Set font styles
+        doc.setFontSize(20);
+        doc.text("Booking Slip", 105, 20, { align: "center" });
 
-        // Construct LaTeX content using an array to avoid parsing issues
-        const latexContent = [
-            "\\documentclass{article}",
-            "\\usepackage{geometry}",
-            "\\geometry{a4paper, margin=1in}",
-            "\\usepackage{graphicx}",
-            "\\usepackage{fancyhdr}",
-            "\\usepackage{xcolor}",
-            "",
-            "\\pagestyle{fancy}",
-            "\\fancyhf{}",
-            "\\fancyhead[C]{\\textbf{Hotel Booking Slip}}",
-            "\\fancyfoot[C]{\\thepage}",
-            "",
-            "\\begin{document}",
-            "",
-            "\\begin{center}",
-            "    \\LARGE{\\textbf{Booking Slip}}\\\\",
-            "    \\vspace{0.5cm}",
-            "    \\large{Hotel: " + hotelName + "}\\\\",
-            "    \\vspace{0.2cm}",
-            "    \\normalsize{Location: " + location + "}",
-            "\\end{center}",
-            "",
-            "\\vspace{1cm}",
-            "",
-            "\\section*{Booking Details}",
-            "\\begin{itemize}",
-            "    \\item \\textbf{Booking ID:} " + booking.id,
-            "    \\item \\textbf{Guest Name:} " + guestName,
-            "    \\item \\textbf{Room Category:} " + roomName,
-            "    \\item \\textbf{Check-In Date:} " + checkIn,
-            "    \\item \\textbf{Check-Out Date:} " + checkOut,
-            "    \\item \\textbf{Number of Adults:} " + numberOfAdults,
-            "    \\item \\textbf{Number of Children:} " + numberOfChildren,
-            "    \\item \\textbf{Number of Rooms:} " + roomCount,
-            "    \\item \\textbf{Total Price:} ₹" + totalPrice,
-            "\\end{itemize}",
-            "",
-            "\\vspace{1cm}",
-            "",
-            "\\begin{center}",
-            "    \\normalsize{Thank you for booking with us!}",
-            "\\end{center}",
-            "",
-            "\\end{document}"
-        ].join("\n");
+        doc.setFontSize(14);
+        doc.text("Hotel: " + (booking.rooms ? booking.rooms.hotel_name : "Unknown Hotel"), 105, 30, { align: "center" });
+        doc.setFontSize(12);
+        doc.text("Location: " + (booking.rooms ? booking.rooms.location : "Unknown Location"), 105, 35, { align: "center" });
 
-        // Log the LaTeX content for debugging
-        console.log("LaTeX Content for Booking Slip:\n" + latexContent);
+        doc.setFontSize(16);
+        doc.text("Booking Details", 20, 50);
 
-        // Alert the user on how to generate the PDF manually
-        alert(
-            "Booking slip LaTeX content has been generated. Check the console for the LaTeX code. " +
-            "To create a PDF, copy the LaTeX content, save it as 'booking.tex', and compile it using a LaTeX compiler like pdflatex."
-        );
+        doc.setFontSize(12);
+        let yPosition = 60;
+        const lineHeight = 10;
+        doc.text("Booking ID: " + booking.id, 20, yPosition);
+        yPosition += lineHeight;
+        doc.text("Guest Name: " + (booking.guest_name || "N/A"), 20, yPosition);
+        yPosition += lineHeight;
+        doc.text("Room Category: " + (booking.rooms ? booking.rooms.name : "Unknown Room"), 20, yPosition);
+        yPosition += lineHeight;
+        doc.text("Check-In Date: " + booking.check_in, 20, yPosition);
+        yPosition += lineHeight;
+        doc.text("Check-Out Date: " + booking.check_out, 20, yPosition);
+        yPosition += lineHeight;
+        doc.text("Number of Adults: " + (booking.number_of_adults || 0), 20, yPosition);
+        yPosition += lineHeight;
+        doc.text("Number of Children: " + (booking.number_of_children || 0), 20, yPosition);
+        yPosition += lineHeight;
+        doc.text("Number of Rooms: " + booking.room_count, 20, yPosition);
+        yPosition += lineHeight;
+        doc.text("Total Price: ₹" + (booking.total_price || "N/A"), 20, yPosition);
+
+        yPosition += lineHeight * 2;
+        doc.setFontSize(12);
+        doc.text("Thank you for booking with us!", 105, yPosition, { align: "center" });
+
+        // Add a footer
+        doc.setFontSize(10);
+        doc.text("Page 1", 105, 280, { align: "center" });
+
+        // Download the PDF
+        doc.save("BookingSlip_" + booking.id + ".pdf");
     }
 
     // Handle logout
